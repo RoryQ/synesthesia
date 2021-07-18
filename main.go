@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
@@ -8,16 +9,35 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
+	"github.com/alecthomas/kong"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
+var cli struct {
+	Run struct{} `cmd default:"1"`
+	Hook struct {
+		Shell string `arg`
+	} `cmd help:"Install shell hook. Supported shells are fish and zsh"`
+}
+
 func main() {
-	modname := readModule(findGoMod())
-	if modname == "" {
-		return
+	ktx := kong.Parse(&cli,
+		kong.Name("synesthesia"),
+		kong.Description("Change iTerm2 tab colour based on go module name."),
+	)
+
+	switch c:= ktx.Command(); c {
+	case "hook <shell>":
+		echoHook(cli.Hook.Shell)
+	default:
+		modname := readModule(findGoMod())
+		if modname == "" {
+			return
+		}
+		setIterm2Tab(getColor(modname))
 	}
-	setIterm2Tab(getColor(modname))
 }
 
 func findGoMod() string {
@@ -62,4 +82,18 @@ func setIterm2Tab(c colorful.Color) {
 	fmt.Printf( "\033]6;1;bg;red;brightness;%d\a", r)
 	fmt.Printf( "\033]6;1;bg;green;brightness;%d\a", g)
 	fmt.Printf( "\033]6;1;bg;blue;brightness;%d\a", b)
+}
+
+
+//go:embed hooks
+var hooks embed.FS
+func echoHook(shell string) {
+	switch s := strings.ToLower(shell); s {
+	case "fish", "zsh":
+		bytes, _ := hooks.ReadFile(fmt.Sprintf("hooks/hook.%s", s))
+		fmt.Print(string(bytes))
+	default:
+		fmt.Fprintf(os.Stderr, "Unsupported shell: %s\n", shell)
+		os.Exit(1)
+	}
 }
