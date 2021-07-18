@@ -32,12 +32,16 @@ func main() {
 	case "hook <shell>":
 		echoHook(cli.Hook.Shell)
 	default:
-		modname := readModule(findGoMod())
-		if modname == "" {
-			return
-		}
-		setIterm2Tab(getColor(modname))
+		synesthetize()
 	}
+}
+
+func synesthetize() {
+	modname := readModule(findGoMod())
+	if modname == "" {
+		return
+	}
+	setIterm2Tab(getColor(modname))
 }
 
 func findGoMod() string {
