@@ -1,4 +1,5 @@
 # Synesthesia
+### Sense your go module as iTerm2 tab colours
 
 Synesthesia updates your iTerm2 tab colours depending on the go module name in your directory ancestry.
 
@@ -25,6 +26,8 @@ eval "$(synesthesia hook zsh)"
 # Usage
 Navigate between your directories as usual. When you have multiple tabs open for different go projects, 
 a consistent random colour will be chosen for any tabs with the same go module name.
+
+![](demo.gif)
 
 # License
 [MIT](LICENSE)
