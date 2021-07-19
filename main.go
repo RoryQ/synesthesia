@@ -39,6 +39,7 @@ func main() {
 func synesthetize() {
 	modname := readModule(findGoMod())
 	if modname == "" {
+		fmt.Print("\033]6;1;bg;*;default\a")
 		return
 	}
 	setIterm2Tab(getColor(modname))
