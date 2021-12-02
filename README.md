@@ -7,7 +7,7 @@ Synesthesia updates your iTerm2 tab colours depending on the go module name in y
 ### 1. Install from source using golang 1.16
 
 ```
-go install github.com/roryq/synesthesia@vlatest
+go install github.com/roryq/synesthesia@latest
 ```
 
 ### 2. Then configure a hook for your shell.
