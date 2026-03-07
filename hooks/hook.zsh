@@ -1,5 +1,5 @@
 _synesthesia_hook() {
-  synesthesia
+  synesthesia --background-tint
 }
 typeset -ag chpwd_functions;
 if [[ -z ${chpwd_functions[(r)_synesthesia_hook]} ]]; then

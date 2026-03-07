@@ -1,3 +1,3 @@
 function __synesthesia_hook --on-variable PWD
-    synesthesia
+    synesthesia --background-tint
 end
