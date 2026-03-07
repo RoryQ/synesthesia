@@ -17,8 +17,7 @@ import (
 var cli struct {
 	Run  struct{} `cmd default:"1"`
 	Hook struct {
-		Shell          string `arg`
-		BackgroundTint bool   `help:"Enable background tinting in the generated hook."`
+		Shell string `arg`
 	} `cmd help:"Install shell hook. Supported shells are fish and zsh"`
 	BackgroundTint bool `help:"Enable background tinting for Ghostty and other terminals."`
 }
@@ -31,7 +30,7 @@ func main() {
 
 	switch c := ktx.Command(); c {
 	case "hook <shell>":
-		echoHook(cli.Hook.Shell, cli.Hook.BackgroundTint)
+		echoHook(cli.Hook.Shell, cli.BackgroundTint)
 	default:
 		synesthetize(cli.BackgroundTint)
 	}
@@ -112,7 +111,8 @@ func echoHook(shell string, enableTint bool) {
 		bytes, _ := hooks.ReadFile(fmt.Sprintf("hooks/hook.%s", s))
 		script := string(bytes)
 		if enableTint {
-			script = strings.ReplaceAll(script, "synesthesia", "synesthesia --background-tint")
+			re := regexp.MustCompile(`\bsynesthesia\b`)
+			script = re.ReplaceAllString(script, `synesthesia --background-tint`)
 		}
 		fmt.Print(script)
 	default:
