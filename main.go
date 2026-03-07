@@ -4,7 +4,6 @@ import (
 	"embed"
 	"fmt"
 	"hash/fnv"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -16,33 +15,38 @@ import (
 )
 
 var cli struct {
-	Run struct{} `cmd default:"1"`
+	Run  struct{} `cmd default:"1"`
 	Hook struct {
-		Shell string `arg`
+		Shell          string `arg`
+		BackgroundTint bool   `help:"Enable background tinting in the generated hook."`
 	} `cmd help:"Install shell hook. Supported shells are fish and zsh"`
+	BackgroundTint bool `help:"Enable background tinting for Ghostty and other terminals."`
 }
 
 func main() {
 	ktx := kong.Parse(&cli,
 		kong.Name("synesthesia"),
-		kong.Description("Change iTerm2 tab colour based on go module name."),
+		kong.Description("Change iTerm2/Ghostty tab/background colour based on go module name."),
 	)
 
-	switch c:= ktx.Command(); c {
+	switch c := ktx.Command(); c {
 	case "hook <shell>":
-		echoHook(cli.Hook.Shell)
+		echoHook(cli.Hook.Shell, cli.Hook.BackgroundTint)
 	default:
-		synesthetize()
+		synesthetize(cli.BackgroundTint)
 	}
 }
 
-func synesthetize() {
+func synesthetize(enableTint bool) {
 	modname := readModule(findGoMod())
 	if modname == "" {
 		fmt.Print("\033]6;1;bg;*;default\a")
+		if enableTint {
+			fmt.Print("\033]111\a")
+		}
 		return
 	}
-	setIterm2Tab(getColor(modname))
+	setTerminalColors(getColor(modname), enableTint)
 }
 
 func findGoMod() string {
@@ -65,7 +69,7 @@ func findGoMod() string {
 }
 
 func readModule(fpath string) string {
-	bytes, err := ioutil.ReadFile(fpath)
+	bytes, err := os.ReadFile(fpath)
 	if err != nil {
 		return ""
 	}
@@ -78,25 +82,39 @@ func readModule(fpath string) string {
 func getColor(name string) colorful.Color {
 	h := fnv.New64()
 	h.Write([]byte(name))
-	rand.Seed(int64(h.Sum64()))
-	return colorful.HappyColor()
+	r := rand.New(rand.NewSource(int64(h.Sum64())))
+	return colorful.HappyColorWithRand(r)
 }
 
-func setIterm2Tab(c colorful.Color) {
+func setTerminalColors(c colorful.Color, enableTint bool) {
 	r, g, b := c.RGB255()
-	fmt.Printf( "\033]6;1;bg;red;brightness;%d\a", r)
-	fmt.Printf( "\033]6;1;bg;green;brightness;%d\a", g)
-	fmt.Printf( "\033]6;1;bg;blue;brightness;%d\a", b)
-}
+	// iTerm2: Tab color (Full intensity)
+	fmt.Printf("\033]6;1;bg;red;brightness;%d\a", r)
+	fmt.Printf("\033]6;1;bg;green;brightness;%d\a", g)
+	fmt.Printf("\033]6;1;bg;blue;brightness;%d\a", b)
 
+	if enableTint {
+		// Ghostty & others: Background color fallback (Lightly tinted)
+		// We blend the vibrant color with a dark background (#121212).
+		// 0.9 means 90% background, 10% our vibrant color.
+		bg, _ := colorful.Hex("#121212")
+		tinted := c.BlendLab(bg, 0.9)
+		fmt.Printf("\033]11;%s\a", tinted.Hex())
+	}
+}
 
 //go:embed hooks
 var hooks embed.FS
-func echoHook(shell string) {
+
+func echoHook(shell string, enableTint bool) {
 	switch s := strings.ToLower(shell); s {
 	case "fish", "zsh":
 		bytes, _ := hooks.ReadFile(fmt.Sprintf("hooks/hook.%s", s))
-		fmt.Print(string(bytes))
+		script := string(bytes)
+		if enableTint {
+			script = strings.ReplaceAll(script, "synesthesia", "synesthesia --background-tint")
+		}
+		fmt.Print(script)
 	default:
 		fmt.Fprintf(os.Stderr, "Unsupported shell: %s\n", shell)
 		os.Exit(1)
