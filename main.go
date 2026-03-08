@@ -145,7 +145,7 @@ func getColor(name string) colorful.Color {
 	h := fnv.New64()
 	h.Write([]byte(name))
 	r := rand.New(rand.NewSource(int64(h.Sum64())))
-	return colorful.HappyColorWithRand(r)
+	return colorful.FastHappyColorWithRand(r)
 }
 
 func setTerminalColors(c colorful.Color, enableTint bool) {
