@@ -25,7 +25,7 @@ var cli struct {
 	Sense struct {
 		Text string `arg help:"Custom text to sense a color from."`
 	} `cmd help:"Sense a color from custom text."`
-	BackgroundTint bool `help:"Enable background tinting for Ghostty and other terminals."`
+	BackgroundTint bool `default:"true" negatable:"" help:"Enable or disable background tinting for Ghostty and other terminals."`
 }
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 		kong.Description("Change iTerm2 tab colour based on go module name or custom text."),
 	)
 
-	switch c := ktx.Command(); c {
+	switch ktx.Command() {
 	case "hook <shell>":
 		echoHook(cli.Hook.Shell, cli.BackgroundTint)
 	case "sense <text>":
@@ -174,7 +174,7 @@ func echoHook(shell string, enableTint bool) {
 		bytes, _ := hooks.ReadFile(fmt.Sprintf("hooks/hook.%s", s))
 		script := string(bytes)
 		if !enableTint {
-			script = strings.ReplaceAll(script, " --background-tint", "")
+			script = strings.ReplaceAll(script, "--background-tint", "--no-background-tint")
 		}
 		fmt.Print(script)
 	default:
